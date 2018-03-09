@@ -22,3 +22,7 @@ li { margin-bottom: 0.5em }
 .controls { margin-bottom: 0.4em }
 .control { display: inline; margin-right: 0.4em }
 select { vertical-align: top }
+
+pre.callstack { display: none; background-color: red; transition: background-color 0.5s; transition-delay: 0.5s }
+span:hover + pre.callstack { display: inline; background-color: white; opacity: 100% }
+pre.callstack:hover { display: inline; background-color: white; opacity: 100% }

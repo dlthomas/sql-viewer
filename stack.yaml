@@ -46,9 +46,7 @@ setup-info:
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - .
-- location:
-    git: git@github.com:uber/queryparser.git
-    commit: 1b8eb4320c38ef5fba63cd62543a10fe1fe5d1f1
+- location: ../queryparser
   subdirs:
     - .
     - misc/predicate-class

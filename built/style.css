@@ -1,0 +1,28 @@
+.selected { background-color: lightgray }
+.tab {
+  display: inline;
+  padding: 0.1em 0.8em 0.1em 0.8em;
+  margin-bottom: 1em;
+  border-right: solid black;
+}
+.frame { display: inline; float: left; padding: 0.4em }
+.tab-list { padding: 0.1em 0 0.4em 0em }
+.tab-body { margin: 0.4em}
+.tab-frame { border-left: solid; border-top: solid; padding-bottom: 0.6em }
+table { border-collapse: collapse; width: 100% }
+tr:nth-child(even) { background-color: aliceblue }
+td, th { border-left: solid lightgrey; margin: 1em; padding: 0.2em }
+th { border-bottom: solid lightgrey }
+td:first-child, th:first-child { border-left: none }
+textarea { min-height: 20em; min-width: 50em }
+dd { margin-left: 1.3em; margin-bottom: 0.8em }
+dl { border-left: solid ghostwhite }
+ol { padding-left: 1.3em; border-left: solid ghostwhite }
+li { margin-bottom: 0.5em }
+.controls { margin-bottom: 0.4em }
+.control { display: inline; margin-right: 0.4em }
+select { vertical-align: top }
+
+pre.callstack { display: none; background-color: red; transition: background-color 0.5s; transition-delay: 0.5s }
+span:hover + pre.callstack { display: inline; background-color: white; opacity: 100% }
+pre.callstack:hover { display: inline; background-color: white; opacity: 100% }
