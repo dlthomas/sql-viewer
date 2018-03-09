@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -17,6 +18,7 @@ import Tabs
 
 import Database.Sql.Hive.Parser (parseAll)
 import Database.Sql.Position (Range)
+import Database.Sql.Type
 
 queryView :: ReactView ()
 queryView = defineControllerView "query" queryStore $ \ (Query query) () -> do
@@ -42,6 +44,12 @@ renderAST :: forall d handler. Data d => d -> ReactElementM handler ()
 renderAST x
   | Just Refl <- eqT @d @Text
   = elemShow x
+  | Just Refl <- eqT @d @String
+  = elemShow x
+  | dataIsList x
+  = renderList x
+  | "pack" == show (toConstr x)
+  = void $ gmapM (\ y -> skip (li_ . renderAST) y >> pure y) x
   | otherwise
   = dl_ $ do
       dt_ $ elemShow (toConstr x)
@@ -51,6 +59,27 @@ dataIsNothing :: forall d. Data d => d -> Bool
 dataIsNothing x =
   typeRepTyCon (typeRep (Proxy @d)) == typeRepTyCon (typeRep (Proxy @(Maybe ())))
     && toConstr x == toConstr (Nothing :: Maybe ())
+
+dataIsList :: forall d. Data d => d -> Bool
+dataIsList x = typeRepTyCon (typeRep (Proxy @d)) == typeRepTyCon (typeRep (Proxy @([()])))
+
+renderList :: forall d handler. Data d => d -> ReactElementM handler ()
+renderList x
+  | toConstr x == toConstr ([] :: [()])
+  = elemText "[]"
+  | otherwise
+  = ol_ $ renderListItems x
+
+data SomeData = forall d. Data d => SomeData d
+
+renderListItems :: forall d handler. Data d => d -> ReactElementM handler ()
+renderListItems x
+  | toConstr x == toConstr ([] :: [()])
+  = pure ()
+  | [SomeData h, SomeData t] <- gmapQ SomeData x
+  = do
+    li_ $ renderAST h
+    renderListItems t
 
 skip :: forall a m. (Monad m, Data a) => (forall d. Data d => d -> m ()) -> a -> m ()
 skip f x
