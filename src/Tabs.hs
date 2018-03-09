@@ -8,7 +8,7 @@ import Data.Text (Text)
 import React.Flux
 
 tabs_ :: [(Text, ReactElementM ViewEventHandler ())] -> ReactElementM handler ()
-tabs_ ts = view (tabsView ts) () mempty
+tabs_ ts = viewWithSKey (tabsView ts) "tabs" () mempty
 
 tabsView :: [(Text, ReactElementM ViewEventHandler ())] -> ReactView ()
 tabsView [] = defineView "tabs" $ \ () -> div_ $ elemText "empty tab list"

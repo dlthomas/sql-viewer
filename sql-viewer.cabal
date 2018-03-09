@@ -17,8 +17,9 @@ cabal-version:       >=1.10
 
 executable sql-viewer
   main-is:             Main.hs
-  other-modules:       DatabaseStore
-                     , QueryParserView
+  other-modules:       QueryParserView
+                     , QueryStore
+                     , SchemaStore
                      , Tabs
   -- other-extensions:    
   cpp-options:         -DGHCJS_BROWSER
