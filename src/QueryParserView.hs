@@ -45,11 +45,18 @@ renderAST x
   | otherwise
   = dl_ $ do
       dt_ $ elemShow (toConstr x)
-      dd_ $ ul_ $ void $ gmapM (\ y -> skipRange (li_ . renderAST) y >> pure y) x
+      dd_ $ ul_ $ void $ gmapM (\ y -> skip (li_ . renderAST) y >> pure y) x
 
-skipRange :: forall a m. (Monad m, Data a) => (forall d. Data d => d -> m ()) -> a -> m ()
-skipRange f x
+dataIsNothing :: forall d. Data d => d -> Bool
+dataIsNothing x =
+  typeRepTyCon (typeRep (Proxy @d)) == typeRepTyCon (typeRep (Proxy @(Maybe ())))
+    && toConstr x == toConstr (Nothing :: Maybe ())
+
+skip :: forall a m. (Monad m, Data a) => (forall d. Data d => d -> m ()) -> a -> m ()
+skip f x
   | Just Refl <- eqT @a @Range
+  = pure ()
+  | dataIsNothing x
   = pure ()
   | otherwise
   = f x
