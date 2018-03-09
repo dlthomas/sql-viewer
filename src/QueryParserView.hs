@@ -1,5 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 module QueryParserView where
@@ -15,6 +16,7 @@ import SchemaStore
 import Tabs
 
 import Database.Sql.Hive.Parser (parseAll)
+import Database.Sql.Position (Range)
 
 queryView :: ReactView ()
 queryView = defineControllerView "query" queryStore $ \ (Query query) () -> do
@@ -43,7 +45,14 @@ renderAST x
   | otherwise
   = dl_ $ do
       dt_ $ elemShow (toConstr x)
-      dd_ $ ul_ $ void $ gmapM (\ y -> li_ (renderAST y) >> pure y) x
+      dd_ $ ul_ $ void $ gmapM (\ y -> skipRange (li_ . renderAST) y >> pure y) x
+
+skipRange :: forall a m. (Monad m, Data a) => (forall d. Data d => d -> m ()) -> a -> m ()
+skipRange f x
+  | Just Refl <- eqT @a @Range
+  = pure ()
+  | otherwise
+  = f x
 
 queryParserView :: ReactView ()
 queryParserView = defineView "query parser" $ \ () -> do
