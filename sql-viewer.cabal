@@ -17,8 +17,15 @@ cabal-version:       >=1.10
 
 executable sql-viewer
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       DatabaseStore
+                     , QueryParserView
+                     , Tabs
   -- other-extensions:    
+  cpp-options:         -DGHCJS_BROWSER
   build-depends:       base >=4.9 && <4.10
+                     , queryparser
+                     , deepseq
+                     , react-flux
+                     , text
   hs-source-dirs:      src
   default-language:    Haskell2010

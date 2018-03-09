@@ -46,10 +46,20 @@ setup-info:
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - .
+- location:
+    git: git@github.com:uber/queryparser.git
+    commit: 1b8eb4320c38ef5fba63cd62543a10fe1fe5d1f1
+  subdirs:
+    - .
+    - misc/predicate-class
+    - dialects/hive
+  extra-dep: true
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-# extra-deps: []
-
+extra-deps:
+  - react-flux-1.2.3
+  - fixed-list-0.1.6
 # Override default flag values for local packages and extra-deps
 # flags: {}
 

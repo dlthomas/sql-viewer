@@ -1,4 +1,7 @@
 module Main where
 
+import QueryParserView
+import React.Flux
+
 main :: IO ()
-main = putStrLn "Hello, Haskell!"
+main = reactRender "main" queryParserView ()
