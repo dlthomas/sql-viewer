@@ -8,7 +8,7 @@ import DatabaseStore
 import Tabs
 
 queryParserView :: ReactView ()
-queryParserView = defineControllerView "query parser" databaseStore $ \ Database{query} () ->
+queryParserView = defineControllerView "query parser" databaseStore $ \ Database{query, schema} () ->
   div_ $ do
     div_ [classNames [("frame", True)]] $ tabs_
       [ ( "Query"
@@ -19,7 +19,11 @@ queryParserView = defineControllerView "query parser" databaseStore $ \ Database
             ] mempty
         )
       , ( "Schema"
-        , elemText "stub"
+        , textarea_
+            [ "value" &= schema
+            , onChange $ \ evt ->
+                [SomeStoreAction databaseStore $ SetSchema $ target evt "value"]
+            ] mempty
         )
       ]
     div_ [classNames [("frame", True)]] $ tabs_
