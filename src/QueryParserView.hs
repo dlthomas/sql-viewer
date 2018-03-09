@@ -2,28 +2,29 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 module QueryParserView where
 
-import Control.Arrow (left)
 import Control.Monad (void)
 import Data.Data
+import Data.Foldable (forM_)
 import Data.Text (Text)
-import Data.Text.Lazy (fromStrict)
+import Data.Text.Lazy (fromStrict, intercalate, toStrict)
 import React.Flux
 import React.Flux.DOM
 
 import Catalog
 import QueryStore
 import SchemaStore
+import ResolvedStore
 import Tabs
 
 import Database.Sql.Hive.Parser (parseAll)
-import Database.Sql.Hive.Type
 import Database.Sql.Position (Range)
 import Database.Sql.Type
-import Database.Sql.Util.Scope
+import Database.Sql.Util.Columns
 
 queryView :: ReactView ()
 queryView = defineControllerView "query" queryStore $ \ (Query query) () -> do
@@ -46,14 +47,20 @@ rawView = defineControllerView "raw" queryStore $ \ (Query query) () ->
   either elemShow renderAST $ parseAll $ fromStrict query
 
 resolvedView :: ReactView ()
-resolvedView =
-  defineControllerView "raw" queryStore $ \ (Query query) () ->
-    (\ c -> view c () mempty) $
-      defineControllerView "resolved" schemaStore $ \ (Schema schema) () ->
-        either elemString renderAST $ do
-          raw <- left show $ parseAll (fromStrict query)
-          catalog <- parseCatalog schema
-          left show $ runResolverNoWarn (resolveHiveStatement raw) (Proxy @Hive) catalog
+resolvedView = defineControllerView "resolved" resolvedStore $ \ (Resolved stmt) () -> either elemString renderAST stmt
+
+columnsView :: ReactView ()
+columnsView = defineControllerView "columns" resolvedStore $ \ (Resolved stmt) () ->
+  case stmt of
+    Left err -> elemString err
+    Right stmt -> table_ $ do
+      tr_ $ do
+        th_ "Column"
+        th_ "Clause"
+      forM_ (getColumns stmt) $ \ (FullyQualifiedColumnName{..}, clause) ->
+        tr_ $ do
+          td_ $ elemText $ toStrict $ intercalate "." [fqcnSchemaName, fqcnTableName, fqcnColumnName]
+          td_ $ elemText $ toStrict clause
 
 renderAST :: forall d handler. Data d => d -> ReactElementM handler ()
 renderAST x
@@ -120,15 +127,15 @@ queryParserView = defineView "query parser" $ \ () -> do
     [ ( "AST"
       , tabs_
           [ ( "Raw"
-            , viewWithSKey rawView "query" () mempty
+            , viewWithSKey rawView "raw-query" () mempty
             )
           , ( "Resolved"
-            , viewWithSKey resolvedView "query" () mempty
+            , viewWithSKey resolvedView "resolved-query" () mempty
             )
           ]
       )
     , ( "Columns"
-      , elemText "stub"
+      , viewWithSKey columnsView "columns" () mempty
       )
     , ( "Lineage"
       , elemText "stub"
