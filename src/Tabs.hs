@@ -11,8 +11,8 @@ tabs_ :: [(Text, ReactElementM ViewEventHandler ())] -> ReactElementM handler ()
 tabs_ ts = viewWithSKey (tabsView ts) "tabs" () mempty
 
 tabsView :: [(Text, ReactElementM ViewEventHandler ())] -> ReactView ()
-tabsView [] = defineView "tabs" $ \ () -> div_ $ elemText "empty tab list"
-tabsView tabs@((t, _):_) = defineStatefulView "tabs" t $ \ t () -> do
+tabsView [] = defineView "tabs" $ \ () -> div_ [classNames [("tab-frame", True)]] $ elemText "empty tab list"
+tabsView tabs@((t, _):_) = defineStatefulView "tabs" t $ \ t () -> div_ [classNames [("tab-frame", True)]] $ do
   div_ [classNames [("tab-list", True)]] $ do
     forM_ tabs $ \case
       (t', _)
