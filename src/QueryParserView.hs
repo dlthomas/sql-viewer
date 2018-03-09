@@ -1,12 +1,20 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 module QueryParserView where
 
+import Control.Monad (void)
+import Data.Data
+import Data.Text (Text)
+import Data.Text.Lazy (fromStrict)
 import React.Flux
 import React.Flux.DOM
 import QueryStore
 import SchemaStore
 import Tabs
+
+import Database.Sql.Hive.Parser (parseAll)
 
 queryView :: ReactView ()
 queryView = defineControllerView "query" queryStore $ \ (Query query) () -> do
@@ -24,21 +32,35 @@ schemaView = defineControllerView "schema" schemaStore $ \ (Schema schema) () ->
         [SomeStoreAction schemaStore $ SetSchema $ target evt "value"]
     ] mempty
 
+rawView :: ReactView ()
+rawView = defineControllerView "raw" queryStore $ \ (Query query) () ->
+  either elemShow renderAST $ parseAll $ fromStrict query
+
+renderAST :: forall d handler. Data d => d -> ReactElementM handler ()
+renderAST x = do
+  case eqT @d @Text of
+    Just Refl -> elemShow x
+    Nothing ->
+      dl_ $ do
+        dt_ $ elemShow (toConstr x)
+        dd_ $ ul_ $ void $ gmapM (\ y -> li_ (renderAST y) >> pure y) x
+
 queryParserView :: ReactView ()
 queryParserView = defineView "query parser" $ \ () -> do
-  div_ [classNames [("frame", True)]] $ tabs_
-    [ ( "Query"
-      , viewWithSKey queryView "query" () mempty
-      )
-    , ( "Schema"
-      , viewWithSKey schemaView "schema" () mempty
-      )
-    ]
+  div_ [classNames [("frame", True)]] $ do
+    tabs_
+      [ ( "Query"
+        , viewWithSKey queryView "query" () mempty
+        )
+      , ( "Schema"
+        , viewWithSKey schemaView "schema" () mempty
+        )
+      ]
   div_ [classNames [("frame", True)]] $ tabs_
     [ ( "AST"
       , tabs_
           [ ( "Raw"
-            , elemText "stub"
+            , viewWithSKey rawView "query" () mempty
             )
           , ( "Resolved"
             , elemText "stub"
