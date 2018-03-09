@@ -29,7 +29,9 @@ executable sql-viewer
                      , queryparser
                      , queryparser-hive
                      , aeson
+                     , containers
                      , deepseq
+                     , mtl
                      , react-flux
                      , text
                      , unordered-containers

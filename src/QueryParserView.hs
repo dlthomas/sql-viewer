@@ -7,9 +7,11 @@
 {-# LANGUAGE TypeFamilies #-}
 module QueryParserView where
 
-import Control.Monad (void)
+import Control.Monad (void, when)
+import Control.Monad.Writer (runWriter)
 import Data.Data
 import Data.Foldable (forM_)
+import qualified Data.Map as M
 import Data.Text (Text)
 import Data.Text.Lazy (fromStrict, intercalate, toStrict)
 import React.Flux
@@ -25,6 +27,9 @@ import Database.Sql.Hive.Parser (parseAll)
 import Database.Sql.Position (Range)
 import Database.Sql.Type
 import Database.Sql.Util.Columns
+import Database.Sql.Util.Eval (RecordSet(..))
+import Database.Sql.Util.Lineage.ColumnPlus
+import Database.Sql.Util.Lineage.Table
 
 queryView :: ReactView ()
 queryView = defineControllerView "query" queryStore $ \ (Query query) () -> do
@@ -54,13 +59,60 @@ columnsView = defineControllerView "columns" resolvedStore $ \ (Resolved stmt) (
   case stmt of
     Left err -> elemString err
     Right stmt -> table_ $ do
-      tr_ $ do
-        th_ "Column"
-        th_ "Clause"
-      forM_ (getColumns stmt) $ \ (FullyQualifiedColumnName{..}, clause) ->
+      forM_ (getColumns stmt) $ \ (fqcn, clause) ->
         tr_ $ do
-          td_ $ elemText $ toStrict $ intercalate "." [fqcnSchemaName, fqcnTableName, fqcnColumnName]
+          td_ $ renderFQCN fqcn
           td_ $ elemText $ toStrict clause
+
+renderFQCN :: FQCN -> ReactElementM handler ()
+renderFQCN FullyQualifiedColumnName{..} = elemText $ toStrict $ intercalate "." [fqcnSchemaName, fqcnTableName, fqcnColumnName]
+
+renderFQTN :: FQTN -> ReactElementM handler ()
+renderFQTN FullyQualifiedTableName{..} = elemText $ toStrict $ intercalate "." [fqtnSchemaName, fqtnTableName]
+
+renderColumnPlusSet :: ColumnPlusSet -> ReactElementM handler ()
+renderColumnPlusSet ColumnPlusSet{..} = do
+  mapM_ renderFQTN $ M.keys columnPlusTables
+  mapM_ renderFQCN $ M.keys columnPlusColumns
+
+columnLineageView :: ReactView ()
+columnLineageView = defineControllerView "column-lineage" resolvedStore $ \ (Resolved resolved) () ->
+  case resolved of
+    Left err -> elemString err
+    Right stmt -> table_ $ do
+      tr_ $ do
+        th_ $ pure ()
+        th_ "Sources"
+      case getColumnLineage stmt of
+        (RecordSet{..}, effects) -> do
+          let (columnSources, countSources) = runWriter recordSetItems
+          when (mempty /= countSources) $ do
+            tr_ $ do
+              td_ "row count"
+              td_ $ renderColumnPlusSet countSources
+          forM_ (zip recordSetLabels columnSources) $ \ (column, sources) -> do
+            tr_ $ do
+              td_ $ case column of
+                RColumnRef fqcn -> renderFQCN $ fqcnToFQCN fqcn
+                RColumnAlias (ColumnAlias _ name _) -> elemText $ toStrict name
+              td_ $ renderColumnPlusSet sources
+
+          forM_ (M.toList effects) $ \ (target, sources) -> do
+            tr_ $ do
+              td_ $ either renderFQTN renderFQCN target
+              td_ $ renderColumnPlusSet sources
+
+tableLineageView :: ReactView ()
+tableLineageView = defineControllerView "table-lineage" resolvedStore $ \ (Resolved resolved) () ->
+  case resolved of
+    Left err -> elemString err
+    Right stmt -> table_ $ do
+      tr_ $ do
+        th_ $ pure ()
+        th_ "Sources"
+      forM_ (M.toList $ getTableLineage stmt) $ \ (target, sources) -> do
+        td_ $ renderFQTN target
+        td_ $ mapM_ renderFQTN sources
 
 renderAST :: forall d handler. Data d => d -> ReactElementM handler ()
 renderAST x
@@ -138,7 +190,14 @@ queryParserView = defineView "query parser" $ \ () -> do
       , viewWithSKey columnsView "columns" () mempty
       )
     , ( "Lineage"
-      , elemText "stub"
+      , tabs_
+        [ ( "Table"
+          , viewWithSKey tableLineageView "table-lineage" () mempty
+          )
+        , ( "Column (Plus Fields and Row Count)"
+          , viewWithSKey columnLineageView "column-lineage" () mempty
+          )
+        ]
       )
     , ( "Evaluation"
       , elemText "stub"
