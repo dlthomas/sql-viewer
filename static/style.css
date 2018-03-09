@@ -1,1 +1,4 @@
 .selected { background-color: lightgray }
+.tab { display: inline; margin: 1em; padding: 0.2em }
+.frame { display: inline; float: left; padding: 0.4em }
+textarea { min-width: 50em }
