@@ -6,19 +6,24 @@
 {-# LANGUAGE TypeFamilies #-}
 module QueryParserView where
 
+import Control.Arrow (left)
 import Control.Monad (void)
 import Data.Data
 import Data.Text (Text)
 import Data.Text.Lazy (fromStrict)
 import React.Flux
 import React.Flux.DOM
+
+import Catalog
 import QueryStore
 import SchemaStore
 import Tabs
 
 import Database.Sql.Hive.Parser (parseAll)
+import Database.Sql.Hive.Type
 import Database.Sql.Position (Range)
 import Database.Sql.Type
+import Database.Sql.Util.Scope
 
 queryView :: ReactView ()
 queryView = defineControllerView "query" queryStore $ \ (Query query) () -> do
@@ -39,6 +44,16 @@ schemaView = defineControllerView "schema" schemaStore $ \ (Schema schema) () ->
 rawView :: ReactView ()
 rawView = defineControllerView "raw" queryStore $ \ (Query query) () ->
   either elemShow renderAST $ parseAll $ fromStrict query
+
+resolvedView :: ReactView ()
+resolvedView =
+  defineControllerView "raw" queryStore $ \ (Query query) () ->
+    (\ c -> view c () mempty) $
+      defineControllerView "resolved" schemaStore $ \ (Schema schema) () ->
+        either elemString renderAST $ do
+          raw <- left show $ parseAll (fromStrict query)
+          catalog <- parseCatalog schema
+          left show $ runResolverNoWarn (resolveHiveStatement raw) (Proxy @Hive) catalog
 
 renderAST :: forall d handler. Data d => d -> ReactElementM handler ()
 renderAST x
@@ -108,7 +123,7 @@ queryParserView = defineView "query parser" $ \ () -> do
             , viewWithSKey rawView "query" () mempty
             )
           , ( "Resolved"
-            , elemText "stub"
+            , viewWithSKey resolvedView "query" () mempty
             )
           ]
       )
