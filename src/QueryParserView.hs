@@ -37,13 +37,13 @@ rawView = defineControllerView "raw" queryStore $ \ (Query query) () ->
   either elemShow renderAST $ parseAll $ fromStrict query
 
 renderAST :: forall d handler. Data d => d -> ReactElementM handler ()
-renderAST x = do
-  case eqT @d @Text of
-    Just Refl -> elemShow x
-    Nothing ->
-      dl_ $ do
-        dt_ $ elemShow (toConstr x)
-        dd_ $ ul_ $ void $ gmapM (\ y -> li_ (renderAST y) >> pure y) x
+renderAST x
+  | Just Refl <- eqT @d @Text
+  = elemShow x
+  | otherwise
+  = dl_ $ do
+      dt_ $ elemShow (toConstr x)
+      dd_ $ ul_ $ void $ gmapM (\ y -> li_ (renderAST y) >> pure y) x
 
 queryParserView :: ReactView ()
 queryParserView = defineView "query parser" $ \ () -> do
