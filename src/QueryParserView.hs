@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -13,7 +14,7 @@ import Data.Data
 import Data.Foldable (forM_)
 import Data.List (intersperse)
 import qualified Data.Map as M
-import Data.Text (Text)
+import Data.Text as T (Text, pack)
 import Data.Text.Lazy (fromStrict, intercalate, toStrict)
 import React.Flux
 import React.Flux.DOM
@@ -49,8 +50,8 @@ schemaView = defineControllerView "schema" inputsStore $ \ Inputs{schema} () -> 
     ] mempty
 
 rawView :: ReactView ()
-rawView = defineControllerView "raw" inputsStore $ \ Inputs{query} () ->
-  either elemShow renderAST $ parse @Hive $ fromStrict query
+rawView = defineControllerView "raw" inputsStore $ \ Inputs{dialect = SomeDialect (_ :: Proxy dialect), query} () ->
+  either elemShow renderAST $ parse @dialect $ fromStrict query
 
 resolvedView :: ReactView ()
 resolvedView = defineControllerView "resolved" resolvedStore $ \ (Resolved stmt) () -> either elemString renderAST stmt
@@ -166,9 +167,23 @@ skip f x
   | otherwise
   = f x
 
+dialect_ :: forall d. (KnownDialect d, Typeable d) => ReactElementM ViewEventHandler ()
+dialect_ = do
+  let dialectName = T.pack $ show $ typeRep (Proxy @d)
+  input_
+    [ "name" $= "dialect"
+    , "value" &= dialectName
+    , "id" &= dialectName
+    , "type" $= "radio"
+    , onChange $ \ _ -> [SomeStoreAction inputsStore $ SetDialect $ SomeDialect (Proxy @d)]
+    ]
+  label_ [ "for" &= dialectName ] $ elemText dialectName
+
 queryParserView :: ReactView ()
 queryParserView = defineView "query parser" $ \ () -> do
   div_ [classNames [("frame", True)]] $ do
+    div_ $ do
+      dialect_ @Hive
     tabs_
       [ ( "Query"
         , viewWithSKey queryView "query" () mempty

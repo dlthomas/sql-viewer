@@ -16,20 +16,27 @@ import GHC.Generics
 import React.Flux
 
 import Catalog
-import ResolvedStore (queryRef, schemaRef, triggerVar)
+import Dialects
+import ResolvedStore (dialectRef, queryRef, schemaRef, triggerVar)
 
 data Inputs = Inputs
-    { query :: !Text
+    { dialect :: !SomeDialect
+    , query :: !Text
     , schema :: !Text
     }
 
 data InputsAction
-    = SetQuery !Text
+    = SetDialect !SomeDialect
+    | SetQuery !Text
     | SetSchema !Text
-      deriving (Show, Typeable, Generic, NFData)
+      deriving (Typeable, Generic, NFData)
 
 instance StoreData Inputs where
   type StoreAction Inputs = InputsAction
+  transform (SetDialect dialect) inputs = do
+    writeIORef dialectRef dialect
+    tryPutMVar triggerVar ()
+    pure inputs{dialect}
   transform (SetQuery query) inputs = do
     writeIORef queryRef query
     tryPutMVar triggerVar ()
@@ -41,6 +48,7 @@ instance StoreData Inputs where
 
 inputsStore :: ReactStore Inputs
 inputsStore = mkStore Inputs
-    { query = "SELECT 1;"
+    { dialect = SomeDialect (Proxy @Hive)
+    , query = "SELECT 1;"
     , schema = defaultCatalog
     }

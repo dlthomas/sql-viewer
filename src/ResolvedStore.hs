@@ -1,8 +1,12 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module ResolvedStore where
@@ -29,17 +33,20 @@ import Database.Sql.Type.Scope
 import Database.Sql.Util.Scope
 
 
-data Resolved = Resolved { resolved :: Either String (HiveStatement ResolvedNames Range) }
+data Resolved = forall d. KnownDialect d => Resolved { resolved :: Either String (ResolvedAST d) }
 
-data ResolvedAction = SetResolved (Either String (HiveStatement ResolvedNames Range))
-    deriving (Typeable, Generic)
+data ResolvedAction = forall d. KnownDialect d => SetResolved (Either String (ResolvedAST d))
+    deriving (Typeable)
 
 instance StoreData Resolved where
   type StoreAction Resolved = ResolvedAction
   transform (SetResolved resolved) _ = pure Resolved{resolved}
 
 resolvedStore :: ReactStore Resolved
-resolvedStore = mkStore Resolved { resolved = Left "initializing" }
+resolvedStore = mkStore Resolved { resolved = Left "initializing" :: Either String (ResolvedAST Hive) }
+
+dialectRef :: IORef SomeDialect
+dialectRef = unsafePerformIO $ newIORef $ SomeDialect (Proxy @Hive)
 
 queryRef :: IORef Text
 queryRef = unsafePerformIO $ newIORef "SELECT 1;"
@@ -52,10 +59,11 @@ triggerVar = unsafePerformIO newEmptyMVar
 
 resolverThread :: IO ()
 resolverThread = forever $ do
+  SomeDialect (_ :: Proxy dialect) <- readIORef dialectRef
   query <- readIORef queryRef
   schema <- readIORef schemaRef
   let resolved = do
-        raw <- left show $ parse @Hive (fromStrict query)
+        raw <- left show $ parse @dialect (fromStrict query)
         catalog <- parseCatalog schema
         resolve catalog raw
   alterStore resolvedStore $ SetResolved resolved
