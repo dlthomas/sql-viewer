@@ -11,6 +11,7 @@ import Control.Monad (void, when)
 import Control.Monad.Writer (runWriter)
 import Data.Data
 import Data.Foldable (forM_)
+import Data.List (intersperse)
 import qualified Data.Map as M
 import Data.Text (Text)
 import Data.Text.Lazy (fromStrict, intercalate, toStrict)
@@ -71,9 +72,10 @@ renderFQTN :: FQTN -> ReactElementM handler ()
 renderFQTN FullyQualifiedTableName{..} = elemText $ toStrict $ intercalate "." [fqtnSchemaName, fqtnTableName]
 
 renderColumnPlusSet :: ColumnPlusSet -> ReactElementM handler ()
-renderColumnPlusSet ColumnPlusSet{..} = do
-  mapM_ renderFQTN $ M.keys columnPlusTables
-  mapM_ renderFQCN $ M.keys columnPlusColumns
+renderColumnPlusSet ColumnPlusSet{..} =
+  sequence_ $ intersperse (elemText "\n") $
+       map renderFQTN (M.keys columnPlusTables)
+    ++ map renderFQCN (M.keys columnPlusColumns)
 
 columnLineageView :: ReactView ()
 columnLineageView = defineControllerView "column-lineage" resolvedStore $ \ (Resolved resolved) () ->
