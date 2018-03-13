@@ -20,6 +20,7 @@ import React.Flux
 import System.IO.Unsafe
 
 import Catalog
+import Dialects
 
 import Database.Sql.Hive.Parser (parseAll)
 import Database.Sql.Hive.Type
@@ -54,8 +55,8 @@ resolverThread = forever $ do
   query <- readIORef queryRef
   schema <- readIORef schemaRef
   let resolved = do
-        raw <- left show $ parseAll (fromStrict query)
+        raw <- left show $ parse @Hive (fromStrict query)
         catalog <- parseCatalog schema
-        left show $ runResolverNoWarn (resolveHiveStatement raw) (Proxy @Hive) catalog
+        resolve catalog raw
   alterStore resolvedStore $ SetResolved resolved
   takeMVar triggerVar

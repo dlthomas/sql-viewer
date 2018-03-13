@@ -19,12 +19,13 @@ import React.Flux
 import React.Flux.DOM
 
 import Catalog
+import Dialects
 import QueryStore
 import SchemaStore
 import ResolvedStore
 import Tabs
 
-import Database.Sql.Hive.Parser (parseAll)
+import Database.Sql.Hive.Type
 import Database.Sql.Position (Range)
 import Database.Sql.Type
 import Database.Sql.Util.Columns
@@ -50,7 +51,7 @@ schemaView = defineControllerView "schema" schemaStore $ \ (Schema schema) () ->
 
 rawView :: ReactView ()
 rawView = defineControllerView "raw" queryStore $ \ (Query query) () ->
-  either elemShow renderAST $ parseAll $ fromStrict query
+  either elemShow renderAST $ parse @Hive $ fromStrict query
 
 resolvedView :: ReactView ()
 resolvedView = defineControllerView "resolved" resolvedStore $ \ (Resolved stmt) () -> either elemString renderAST stmt
