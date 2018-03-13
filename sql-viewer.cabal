@@ -28,6 +28,8 @@ executable sql-viewer
   build-depends:       base >=4.9 && <4.10
                      , queryparser
                      , queryparser-hive
+                     , queryparser-presto
+                     , queryparser-vertica
                      , aeson
                      , containers
                      , deepseq

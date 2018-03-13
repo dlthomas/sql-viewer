@@ -53,6 +53,8 @@ packages:
     - .
     - misc/predicate-class
     - dialects/hive
+    - dialects/presto
+    - dialects/vertica
   extra-dep: true
 
 # Dependency packages to be pulled from upstream that are not in the resolver

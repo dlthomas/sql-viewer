@@ -25,7 +25,6 @@ import InputsStore
 import ResolvedStore
 import Tabs
 
-import Database.Sql.Hive.Type
 import Database.Sql.Position (Range)
 import Database.Sql.Type
 import Database.Sql.Util.Columns
@@ -184,6 +183,8 @@ queryParserView = defineView "query parser" $ \ () -> do
   div_ [classNames [("frame", True)]] $ do
     div_ $ do
       dialect_ @Hive
+      dialect_ @Presto
+      dialect_ @Vertica
     tabs_
       [ ( "Query"
         , viewWithSKey queryView "query" () mempty
