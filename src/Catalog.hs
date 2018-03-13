@@ -8,7 +8,7 @@ module Catalog where
 import Data.Aeson as JSON
 import Data.Foldable (toList)
 import qualified Data.HashMap.Strict as HMS
-import Data.Text (Text)
+import Data.Text as T (Text, unlines)
 import Data.Text.Lazy (fromStrict, toStrict)
 import Data.Text.Lazy.Encoding (encodeUtf8)
 
@@ -18,7 +18,7 @@ parseCatalog :: Text -> Either String Catalog
 parseCatalog = JSON.eitherDecode' . encodeUtf8 . fromStrict
 
 defaultCatalog :: Text
-defaultCatalog = mconcat
+defaultCatalog = T.unlines
   [ "{ \"map\":"
   , "    {\"hive\":"
   , "        {\"public\":"

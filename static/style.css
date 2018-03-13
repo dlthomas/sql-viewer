@@ -10,4 +10,4 @@
 .tab-body { margin: 0.4em}
 .tab-frame { border-left: solid; border-top: solid; padding-bottom: 0.6em }
 td { margin: 1em; padding: 0.2em }
-textarea { min-width: 50em }
+textarea { min-height: 20em; min-width: 50em }
