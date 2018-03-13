@@ -20,8 +20,7 @@ import React.Flux.DOM
 
 import Catalog
 import Dialects
-import QueryStore
-import SchemaStore
+import InputsStore
 import ResolvedStore
 import Tabs
 
@@ -34,23 +33,23 @@ import Database.Sql.Util.Lineage.ColumnPlus
 import Database.Sql.Util.Lineage.Table
 
 queryView :: ReactView ()
-queryView = defineControllerView "query" queryStore $ \ (Query query) () -> do
+queryView = defineControllerView "query" inputsStore $ \ Inputs{query} () -> do
   textarea_
     [ "value" &= query
     , onChange $ \ evt ->
-        [SomeStoreAction queryStore $ SetQuery $ target evt "value"]
+        [SomeStoreAction inputsStore $ SetQuery $ target evt "value"]
     ] mempty
 
 schemaView :: ReactView ()
-schemaView = defineControllerView "schema" schemaStore $ \ (Schema schema) () -> do
+schemaView = defineControllerView "schema" inputsStore $ \ Inputs{schema} () -> do
   textarea_
     [ "value" &= schema
     , onChange $ \ evt ->
-        [SomeStoreAction schemaStore $ SetSchema $ target evt "value"]
+        [SomeStoreAction inputsStore $ SetSchema $ target evt "value"]
     ] mempty
 
 rawView :: ReactView ()
-rawView = defineControllerView "raw" queryStore $ \ (Query query) () ->
+rawView = defineControllerView "raw" inputsStore $ \ Inputs{query} () ->
   either elemShow renderAST $ parse @Hive $ fromStrict query
 
 resolvedView :: ReactView ()

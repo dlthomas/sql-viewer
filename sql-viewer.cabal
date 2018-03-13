@@ -20,9 +20,8 @@ executable sql-viewer
   other-modules:       Catalog
                      , Dialects
                      , QueryParserView
-                     , QueryStore
+                     , InputsStore
                      , ResolvedStore
-                     , SchemaStore
                      , Tabs
   -- other-extensions:    
   cpp-options:         -DGHCJS_BROWSER
