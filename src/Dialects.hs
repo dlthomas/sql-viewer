@@ -52,7 +52,10 @@ instance KnownDialect Vertica where
     parse = left show . VSQL.parseAll
     resolve catalog stmt = left show $ runResolverNoWarn (resolveVerticaStatement stmt) (Proxy :: Proxy Vertica) catalog
 
-data SomeDialect = forall d. KnownDialect d => SomeDialect (Proxy d)
+data SomeDialect = forall d. (Typeable d, KnownDialect d) => SomeDialect (Proxy d)
+
+instance Eq SomeDialect where
+  SomeDialect x == SomeDialect y = typeRep x == typeRep y
 
 instance NFData SomeDialect where
     rnf (SomeDialect d) = d `seq` ()

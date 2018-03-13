@@ -12,9 +12,10 @@ import Control.Monad (void, when)
 import Control.Monad.Writer (runWriter)
 import Data.Data
 import Data.Foldable (forM_)
+import Data.JSString as JS (pack)
 import Data.List (intersperse)
 import qualified Data.Map as M
-import Data.Text as T (Text, pack)
+import Data.Text as T (Text)
 import Data.Text.Lazy (fromStrict, intercalate, toStrict)
 import React.Flux
 import React.Flux.DOM
@@ -167,16 +168,19 @@ skip f x
   = f x
 
 dialect_ :: forall d. (KnownDialect d, Typeable d) => ReactElementM ViewEventHandler ()
-dialect_ = do
-  let dialectName = T.pack $ show $ typeRep (Proxy @d)
-  input_
-    [ "name" $= "dialect"
-    , "value" &= dialectName
-    , "id" &= dialectName
-    , "type" $= "radio"
-    , onChange $ \ _ -> [SomeStoreAction inputsStore $ SetDialect $ SomeDialect (Proxy @d)]
-    ]
-  label_ [ "for" &= dialectName ] $ elemText dialectName
+dialect_ = viewWithSKey dialectView dialectName () mempty
+  where
+    dialectName = JS.pack $ show $ typeRep (Proxy @d)
+    dialectView = defineControllerView dialectName inputsStore $ \ Inputs{dialect} () -> do
+      input_
+        [ "name" $= "dialect"
+        , "checked" &= (dialect == SomeDialect (Proxy @d))
+        , "value" &= dialectName
+        , "id" &= dialectName
+        , "type" $= "radio"
+        , onChange $ \ _ -> [SomeStoreAction inputsStore $ SetDialect $ SomeDialect (Proxy @d)]
+        ]
+      label_ [ "for" &= dialectName ] $ elemJSString dialectName
 
 queryParserView :: ReactView ()
 queryParserView = defineView "query parser" $ \ () -> do

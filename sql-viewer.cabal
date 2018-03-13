@@ -26,6 +26,7 @@ executable sql-viewer
   -- other-extensions:    
   cpp-options:         -DGHCJS_BROWSER
   build-depends:       base >=4.9 && <4.10
+                     , ghcjs-base
                      , queryparser
                      , queryparser-hive
                      , queryparser-presto
