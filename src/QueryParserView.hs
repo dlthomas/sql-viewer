@@ -14,6 +14,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.Data
 import Data.Foldable (forM_)
+import Data.Functor.Identity (Identity(..))
 import Data.JSString as JS (pack)
 import Data.List (intersperse)
 import qualified Data.Map as M
@@ -131,6 +132,18 @@ renderAST x
   = elemShow x
   | Just Refl <- eqT @d @String
   = elemShow x
+  | Just Refl <- eqT @d @(UQColumnName ())
+  , QColumnName _ None columnName <- x
+  = elemText $ toStrict columnName
+  | Just Refl <- eqT @d @(UQColumnName Range)
+  , QColumnName _ None columnName <- x
+  = elemText $ toStrict columnName
+  | Just Refl <- eqT @d @(FQColumnName Range)
+  , QColumnName _ (Identity (QTableName _ (Identity (QSchemaName _ _ schemaName _)) tableName)) columnName <- x
+  = elemText $ toStrict $ intercalate "." [schemaName, tableName, columnName]
+  | Just Refl <- eqT @d @(FQTableName Range)
+  , QTableName _ (Identity (QSchemaName _ _ schemaName _)) tableName <- x
+  = elemText $ toStrict $ intercalate "." [schemaName, tableName]
   | dataIsList x
   = renderList x
   | otherwise
