@@ -149,7 +149,7 @@ renderAST x
   | otherwise
   = dl_ $ do
       dt_ $ elemShow (toConstr x)
-      dd_ $ ul_ $ void $ gmapM (\ y -> skip (li_ . renderAST) y >> pure y) x
+      void $ gmapM (\ y -> skip (dd_ . renderAST) y >> pure y) x
 
 dataIsNothing :: forall d. Data d => d -> Bool
 dataIsNothing x =

@@ -11,3 +11,7 @@
 .tab-frame { border-left: solid; border-top: solid; padding-bottom: 0.6em }
 td { margin: 1em; padding: 0.2em }
 textarea { min-height: 20em; min-width: 50em }
+dd { margin-left: 1.3em; margin-bottom: 0.8em }
+dl { border-left: solid ghostwhite }
+ol { padding-left: 1.3em; border-left: solid ghostwhite }
+li { margin-bottom: 0.5em }
