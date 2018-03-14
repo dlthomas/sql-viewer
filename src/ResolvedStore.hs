@@ -54,17 +54,21 @@ queryRef = unsafePerformIO $ newIORef "SELECT 1;"
 schemaRef :: IORef Text
 schemaRef = unsafePerformIO $ newIORef defaultCatalog
 
+pathRef :: IORef Text
+pathRef = unsafePerformIO $ newIORef "[\"public\"]"
+
 triggerVar :: MVar ()
 triggerVar = unsafePerformIO newEmptyMVar
 
 resolverThread :: IO ()
 resolverThread = forever $ do
-  SomeDialect (_ :: Proxy dialect) <- readIORef dialectRef
+  dialect@(SomeDialect (_ :: Proxy dialect)) <- readIORef dialectRef
   query <- readIORef queryRef
   schema <- readIORef schemaRef
+  path <- readIORef pathRef
   let resolved = do
         raw <- left show $ parse @dialect (fromStrict query)
-        catalog <- parseCatalog schema
+        catalog <- parseCatalog dialect schema path
         resolve catalog raw
   alterStore resolvedStore $ SetResolved resolved
   takeMVar triggerVar

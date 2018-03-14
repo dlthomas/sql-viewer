@@ -17,18 +17,20 @@ import React.Flux
 
 import Catalog
 import Dialects
-import ResolvedStore (dialectRef, queryRef, schemaRef, triggerVar)
+import ResolvedStore (dialectRef, queryRef, pathRef, schemaRef, triggerVar)
 
 data Inputs = Inputs
     { dialect :: !SomeDialect
     , query :: !Text
     , schema :: !Text
+    , path :: !Text
     }
 
 data InputsAction
     = SetDialect !SomeDialect
     | SetQuery !Text
     | SetSchema !Text
+    | SetPath !Text
       deriving (Typeable, Generic, NFData)
 
 instance StoreData Inputs where
@@ -45,10 +47,15 @@ instance StoreData Inputs where
     writeIORef schemaRef schema
     tryPutMVar triggerVar ()
     pure inputs{schema}
+  transform (SetPath path) inputs = do
+    writeIORef pathRef path
+    tryPutMVar triggerVar ()
+    pure inputs{path}
 
 inputsStore :: ReactStore Inputs
 inputsStore = mkStore Inputs
     { dialect = SomeDialect (Proxy @Hive)
     , query = "SELECT 1;"
     , schema = defaultCatalog
+    , path = "[\"public\"]"
     }

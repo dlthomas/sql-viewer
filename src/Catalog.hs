@@ -9,34 +9,28 @@ import Data.Aeson as JSON
 import Data.Foldable (toList)
 import qualified Data.HashMap.Strict as HMS
 import Data.Text as T (Text, unlines)
-import Data.Text.Lazy (fromStrict, toStrict)
+import Data.Text.Lazy as TL (fromStrict, pack, toStrict)
 import Data.Text.Lazy.Encoding (encodeUtf8)
+import Data.Typeable (typeRep)
+
+import Dialects
 
 import Database.Sql.Type
 
-parseCatalog :: Text -> Either String Catalog
-parseCatalog = JSON.eitherDecode' . encodeUtf8 . fromStrict
+parseCatalog :: SomeDialect -> Text -> Text -> Either String Catalog
+parseCatalog (SomeDialect dialect) schema path = do
+  let database = DatabaseName () $ TL.pack $ show $ typeRep dialect
+      decode :: FromJSON a => Text -> Either String a
+      decode = JSON.eitherDecode' . encodeUtf8 . fromStrict
+  schema' <- decode schema
+  path' <- map (`mkNormalSchema` ()) <$> decode path
+  pure $ makeCatalog (HMS.singleton database schema') path' database
 
 defaultCatalog :: Text
 defaultCatalog = T.unlines
-  [ "{ \"map\":"
-  , "    {\"hive\":"
-  , "        {\"public\":"
-  , "           {\"tbl\":[\"a\"]}}}"
-  , ", \"path\": [\"public\"]"
-  , ", \"current\": \"hive\"}"
+  [ "{\"public\":"
+  , "    {\"tbl\": [\"a\", \"b\"]}}"
   ]
-
-instance FromJSON Catalog where
-  parseJSON = withObject "catalog" $ \ o ->
-    makeCatalog
-      <$> o .: "map"
-      <*> (map (`mkNormalSchema` ()) <$> o .: "path")
-      <*> (DatabaseName () <$> o .: "current")
-
-instance FromJSON CatalogMap where
-  parseJSON = withObject "catalog-map" $
-    (HMS.fromList <$>) . mapM (\ (k, v) -> (DatabaseName () $ fromStrict k,) <$> parseJSON v) . HMS.toList
 
 instance FromJSON DatabaseMap where
   parseJSON = withObject "database-map" $

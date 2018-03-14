@@ -45,12 +45,18 @@ queryView = defineControllerView "query" inputsStore $ \ Inputs{query} () -> do
     ] mempty
 
 schemaView :: ReactView ()
-schemaView = defineControllerView "schema" inputsStore $ \ Inputs{schema} () -> do
+schemaView = defineControllerView "schema" inputsStore $ \ Inputs{schema, path} () -> do
   textarea_
     [ "value" &= schema
     , onChange $ \ evt ->
         [SomeStoreAction inputsStore $ SetSchema $ target evt "value"]
     ] mempty
+  br_ []
+  input_
+    [ "value" &= path
+    , onChange $ \ evt ->
+        [SomeStoreAction inputsStore $ SetPath $ target evt "value"]
+    ]
 
 rawView :: ReactView ()
 rawView = defineControllerView "raw" inputsStore $ \ Inputs{dialect = SomeDialect (_ :: Proxy dialect), query} () ->
