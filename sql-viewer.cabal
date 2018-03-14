@@ -32,6 +32,7 @@ executable sql-viewer
                      , queryparser-presto
                      , queryparser-vertica
                      , aeson
+                     , bytestring
                      , containers
                      , deepseq
                      , mtl

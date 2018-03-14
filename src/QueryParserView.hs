@@ -10,13 +10,15 @@ module QueryParserView where
 
 import Control.Monad (void, when)
 import Control.Monad.Writer (runWriter)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
 import Data.Data
 import Data.Foldable (forM_)
 import Data.JSString as JS (pack)
 import Data.List (intersperse)
 import qualified Data.Map as M
 import Data.Text as T (Text)
-import Data.Text.Lazy (fromStrict, intercalate, toStrict)
+import Data.Text.Lazy as TL (Text, fromStrict, intercalate, toStrict)
 import React.Flux
 import React.Flux.DOM
 
@@ -119,14 +121,18 @@ tableLineageView = defineControllerView "table-lineage" resolvedStore $ \ (Resol
 
 renderAST :: forall d handler. Data d => d -> ReactElementM handler ()
 renderAST x
-  | Just Refl <- eqT @d @Text
+  | Just Refl <- eqT @d @T.Text
+  = elemShow x
+  | Just Refl <- eqT @d @TL.Text
+  = elemShow x
+  | Just Refl <- eqT @d @BS.ByteString
+  = elemShow x
+  | Just Refl <- eqT @d @BL.ByteString
   = elemShow x
   | Just Refl <- eqT @d @String
   = elemShow x
   | dataIsList x
   = renderList x
-  | "pack" == show (toConstr x)
-  = void $ gmapM (\ y -> skip (li_ . renderAST) y >> pure y) x
   | otherwise
   = dl_ $ do
       dt_ $ elemShow (toConstr x)
