@@ -19,3 +19,6 @@ dd { margin-left: 1.3em; margin-bottom: 0.8em }
 dl { border-left: solid ghostwhite }
 ol { padding-left: 1.3em; border-left: solid ghostwhite }
 li { margin-bottom: 0.5em }
+.controls { margin-bottom: 0.4em }
+.control { display: inline; margin-right: 0.4em }
+select { vertical-align: top }

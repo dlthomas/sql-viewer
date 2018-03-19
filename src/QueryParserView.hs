@@ -263,24 +263,25 @@ dialect_ = viewWithSKey dialectView dialectName () mempty
   where
     dialectName = JS.pack $ show $ typeRep (Proxy @d)
     dialectView = defineControllerView dialectName inputsStore $ \ Inputs{dialect} () -> do
-      input_
-        [ "name" $= "dialect"
-        , "checked" &= (dialect == SomeDialect (Proxy @d))
-        , "value" &= dialectName
-        , "id" &= dialectName
-        , "type" $= "radio"
-        , onChange $ \ _ -> [SomeStoreAction inputsStore $ SetDialect $ SomeDialect (Proxy @d)]
-        ]
-      label_ [ "for" &= dialectName ] $ elemJSString dialectName
+      div_ [ classNames [("control", True)] ] $ do
+        input_
+          [ "name" $= "dialect"
+          , "checked" &= (dialect == SomeDialect (Proxy @d))
+          , "value" &= dialectName
+          , "id" &= dialectName
+          , "type" $= "radio"
+          , onChange $ \ _ -> [SomeStoreAction inputsStore $ SetDialect $ SomeDialect (Proxy @d)]
+          ]
+        label_ [ "for" &= dialectName ] $ elemJSString dialectName
 
 queryParserView :: ReactView ()
 queryParserView = defineView "query parser" $ \ () -> do
   div_ [classNames [("frame", True)]] $ do
-    div_ $ do
+    div_ [classNames [("controls", True)]] $ do
       dialect_ @Hive
       dialect_ @Presto
       dialect_ @Vertica
-    div_ $ viewWithSKey examplesView "examples" () mempty
+      div_ [ classNames [("control", True)] ]  $ viewWithSKey examplesView "examples" () mempty
 
     tabs_
       [ ( "Query"
