@@ -111,11 +111,19 @@ columnsView :: ReactView ()
 columnsView = defineControllerView "columns" resolvedStore $ \ (Resolved stmt) () ->
   case stmt of
     Left err -> elemString err
-    Right stmt -> table_ $ do
-      forM_ (getColumns stmt) $ \ (fqcn, clause) ->
-        tr_ $ do
-          td_ $ renderFQCN fqcn
-          td_ $ elemText $ toStrict clause
+    Right stmt ->
+      case getColumns stmt of
+        columns
+          | null columns -> "no column usage to report"
+          | otherwise ->
+              table_ $ do
+                tr_ $ do
+                  th_ "Column"
+                  th_ "Clauses"
+                forM_ columns $ \ (fqcn, clause) ->
+                  tr_ $ do
+                    td_ $ renderFQCN fqcn
+                    td_ $ elemText $ toStrict clause
 
 renderFQCN :: FQCN -> ReactElementM handler ()
 renderFQCN FullyQualifiedColumnName{..} = elemText $ toStrict $ intercalate "." [fqcnSchemaName, fqcnTableName, fqcnColumnName]
@@ -135,7 +143,7 @@ columnLineageView = defineControllerView "column-lineage" resolvedStore $ \ (Res
     Left err -> elemString err
     Right stmt -> table_ $ do
       tr_ $ do
-        th_ $ pure ()
+        th_ "Targets"
         th_ "Sources"
       case getColumnLineage stmt of
         (RecordSet{..}, effects) -> do
@@ -160,13 +168,17 @@ tableLineageView :: ReactView ()
 tableLineageView = defineControllerView "table-lineage" resolvedStore $ \ (Resolved resolved) () ->
   case resolved of
     Left err -> elemString err
-    Right stmt -> table_ $ do
-      tr_ $ do
-        th_ $ pure ()
-        th_ "Sources"
-      forM_ (M.toList $ getTableLineage stmt) $ \ (target, sources) -> do
-        td_ $ renderFQTN target
-        td_ $ mapM_ renderFQTN sources
+    Right stmt ->
+      case M.toList $ getTableLineage stmt of
+        [] -> elemText "no table-level lineage to report"
+        lineage -> do
+          table_ $ do
+            tr_ $ do
+              th_ "Targets"
+              th_ "Sources"
+            forM_ lineage $ \ (target, sources) -> do
+              td_ $ renderFQTN target
+              td_ $ mapM_ renderFQTN sources
 
 renderAST :: forall d handler. Data d => d -> ReactElementM handler ()
 renderAST x

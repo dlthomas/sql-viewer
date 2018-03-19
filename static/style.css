@@ -9,7 +9,11 @@
 .tab-list { padding: 0.1em 0 0.4em 0em }
 .tab-body { margin: 0.4em}
 .tab-frame { border-left: solid; border-top: solid; padding-bottom: 0.6em }
-td { margin: 1em; padding: 0.2em }
+table { border-collapse: collapse; width: 100% }
+tr:nth-child(even) { background-color: aliceblue }
+td, th { border-left: solid lightgrey; margin: 1em; padding: 0.2em }
+th { border-bottom: solid lightgrey }
+td:first-child, th:first-child { border-left: none }
 textarea { min-height: 20em; min-width: 50em }
 dd { margin-left: 1.3em; margin-bottom: 0.8em }
 dl { border-left: solid ghostwhite }
