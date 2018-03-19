@@ -19,7 +19,7 @@ import Data.JSString as JS (pack)
 import Data.List (intersperse)
 import qualified Data.Map as M
 import Data.Text as T (Text, unpack)
-import qualified Data.Text.Lazy as TL (Text)
+import qualified Data.Text.Lazy as TL (Text, unpack)
 import Data.Text.Lazy as TL (fromStrict, intercalate, toStrict)
 import React.Flux
 import React.Flux.DOM
@@ -131,10 +131,13 @@ renderFQCN FullyQualifiedColumnName{..} = elemText $ toStrict $ intercalate "." 
 renderFQTN :: FQTN -> ReactElementM handler ()
 renderFQTN FullyQualifiedTableName{..} = elemText $ toStrict $ intercalate "." [fqtnSchemaName, fqtnTableName]
 
+renderFQTNRowCount :: FQTN -> ReactElementM handler ()
+renderFQTNRowCount fqtn = renderFQTN fqtn >> " row count"
+
 renderColumnPlusSet :: ColumnPlusSet -> ReactElementM handler ()
 renderColumnPlusSet ColumnPlusSet{..} =
-  sequence_ $ intersperse (elemText "\n") $
-       map renderFQTN (M.keys columnPlusTables)
+  sequence_ $ intersperse (elemText ",\n") $
+       map renderFQTNRowCount (M.keys columnPlusTables)
     ++ map renderFQCN (M.keys columnPlusColumns)
 
 columnLineageView :: ReactView ()
@@ -150,18 +153,21 @@ columnLineageView = defineControllerView "column-lineage" resolvedStore $ \ (Res
           let (columnSources, countSources) = runWriter recordSetItems
           when (mempty /= countSources) $ do
             tr_ $ do
-              td_ "row count"
+              td_ "result row count"
               td_ $ renderColumnPlusSet countSources
           forM_ (zip recordSetLabels columnSources) $ \ (column, sources) -> do
             tr_ $ do
-              td_ $ case column of
-                RColumnRef fqcn -> renderFQCN $ fqcnToFQCN fqcn
-                RColumnAlias (ColumnAlias _ name _) -> elemText $ toStrict name
+              td_ $
+                let name =
+                      case column of
+                        RColumnRef (QColumnName _ _ name) -> name
+                        RColumnAlias (ColumnAlias _ name _) -> name
+                 in elemString ("result column " ++ TL.unpack name)
               td_ $ renderColumnPlusSet sources
 
           forM_ (M.toList effects) $ \ (target, sources) -> do
             tr_ $ do
-              td_ $ either renderFQTN renderFQCN target
+              td_ $ either renderFQTNRowCount renderFQCN target
               td_ $ renderColumnPlusSet sources
 
 tableLineageView :: ReactView ()
