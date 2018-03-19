@@ -18,8 +18,9 @@ import Data.Functor.Identity (Identity(..))
 import Data.JSString as JS (pack)
 import Data.List (intersperse)
 import qualified Data.Map as M
-import Data.Text as T (Text)
-import Data.Text.Lazy as TL (Text, fromStrict, intercalate, toStrict)
+import Data.Text as T (Text, unpack)
+import qualified Data.Text.Lazy as TL (Text)
+import Data.Text.Lazy as TL (fromStrict, intercalate, toStrict)
 import React.Flux
 import React.Flux.DOM
 
@@ -57,6 +58,47 @@ schemaView = defineControllerView "schema" inputsStore $ \ Inputs{schema, path} 
     , onChange $ \ evt ->
         [SomeStoreAction inputsStore $ SetPath $ target evt "value"]
     ]
+
+data Example = Example
+  { name :: !Text
+  , dialect :: !SomeDialect
+  , query :: !Text
+  , schema :: !Text
+  , path :: !Text
+  }
+
+renderExample :: Int -> Example -> ReactElementM handler ()
+renderExample idx Example{..} = option_ [ "value" &= show idx ] $ elemText name
+
+examplesView :: ReactView ()
+examplesView = defineStatefulView "examples" 0 $ \ idx () -> do
+  select_
+    [ onChange $ \ evt _ ->
+        case read $ T.unpack $ target evt "value" of
+          new | new == idx -> ([], Nothing)
+              | Just Example{..} <- lookup new examples
+              -> ( map (SomeStoreAction inputsStore)
+                    [ SetDialect dialect
+                    , SetQuery query
+                    , SetSchema schema
+                    , SetPath path
+                    ]
+                 , Just new
+                 )
+              | otherwise -> ([], Just new)
+    ] $ do
+      option_ "examples"
+      mapM_ (uncurry renderExample) examples
+  where
+    examples = zip [1..]
+      [ Example
+          { name = "CTAS"
+          , dialect = SomeDialect (Proxy @Hive)
+          , query = "CREATE TABLE bar AS SELECT * FROM foo WHERE a = 7;"
+          , schema = defaultCatalog
+          , path = "[\"public\"]"
+          }
+      ]
 
 rawView :: ReactView ()
 rawView = defineControllerView "raw" inputsStore $ \ Inputs{dialect = SomeDialect (_ :: Proxy dialect), query} () ->
@@ -214,6 +256,8 @@ queryParserView = defineView "query parser" $ \ () -> do
       dialect_ @Hive
       dialect_ @Presto
       dialect_ @Vertica
+    div_ $ viewWithSKey examplesView "examples" () mempty
+
     tabs_
       [ ( "Query"
         , viewWithSKey queryView "query" () mempty
