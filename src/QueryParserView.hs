@@ -210,6 +210,12 @@ renderAST x
   | Just Refl <- eqT @d @(FQTableName Range)
   , QTableName _ (Identity (QSchemaName _ _ schemaName _)) tableName <- x
   = elemText $ toStrict $ intercalate "." [schemaName, tableName]
+  | Just Refl <- eqT @d @(ColumnAlias Range)
+  , ColumnAlias _ name (ColumnAliasId aliasId) <- x
+  = "ColumnAlias " >> elemString (show name) >> " (" >> elemString (show aliasId) >> ")"
+  | Just Refl <- eqT @d @(TableAlias Range)
+  , TableAlias _ name (TableAliasId aliasId) <- x
+  = "TableAlias " >> elemString (show name) >> " (" >> elemString (show aliasId) >> ")"
   | dataIsList x
   = renderList x
   | otherwise
